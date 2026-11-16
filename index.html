@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPLDV Interactive Learning</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#0B132B',
+                        electric: '#1C4ED8',
+                        purple: '#7E22CE',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- MathJax for Mathematical Typesetting -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- JSXGraph for Interactive Math Graphics -->
+    <script type="text/javascript" charset="UTF-8" src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css" />
+
+    <!-- Marked JS for Chatbot Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; overflow-x: hidden; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #1C4ED8, #7E22CE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .nav-item.active {
+            background-color: #EEF2FF;
+            color: #1C4ED8;
+            border-right: 4px solid #1C4ED8;
+            font-weight: 600;
+        }
+        
+        /* JXG Graph Board styling */
+        .jxgbox { border-radius: 1rem; border: none; box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); }
+        
+        .chat-bubble-user { background: #1C4ED8; color: white; border-radius: 1rem 1rem 0 1rem; }
+        .chat-bubble-ai { background: #F1F5F9; color: #1E293B; border-radius: 1rem 1rem 1rem 0; }
+        
+        .math-input { width: 60px; text-align: center; font-weight: bold; color: #1C4ED8; }
+        
+        /* Hide all sections by default except home */
+        .section-view { display: none; }
+        #view-home { display: block; }
+    </style>
+</head>
+<body class="text-slate-800 flex h-screen w-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white shadow-xl flex-shrink-0 flex flex-col z-20 hidden md:flex h-full">
+        <div class="p-6 bg-gradient-to-br from-navy to-electric text-white">
+            <div class="flex items-center gap-3 mb-2">
+                <i class="ph ph-function text-3xl"></i>
+                <h1 class="font-bold text-xl leading-tight">SPLDV<br><span class="text-sm font-normal text-blue-200">Interactive Learning</span></h1>
+            </div>
+            <p class="text-xs text-blue-200 mt-4 border-t border-blue-400/30 pt-2">Pengembang:<br><b>I Made Edy Bangkit Saputra</b></p>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4">
+            <nav class="flex flex-col gap-1 px-3" id="main-nav">
+                <button onclick="navigate('view-home')" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors text-left">
+                    <i class="ph-fill ph-house text-xl"></i> Beranda
+                </button>
+                <button onclick="navigate('view-materi')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors text-left">
+                    <i class="ph-fill ph-book-open text-xl"></i> 1. Materi Pembelajaran
+                </button>
+                <button onclick="navigate('view-grafik')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors text-left">
+                    <i class="ph-fill ph-chart-line-up text-xl"></i> 2. Simulasi Grafik
+                </button>
+                <button onclick="navigate('view-metode')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors text-left">
+                    <i class="ph-fill ph-calculator text-xl"></i> 3. Metode Penyelesaian
+                </button>
+                <button onclick="navigate('view-latihan')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors text-left">
+                    <i class="ph-fill ph-pencil-simple text-xl"></i> 4. Contoh & Latihan
+                </button>
+                <button onclick="navigate('view-eksplorasi')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors text-left">
+                    <i class="ph-fill ph-flask text-xl"></i> 5. Eksplorasi Virtual
+                </button>
+                <button onclick="navigate('view-chatbot')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors text-left">
+                    <i class="ph-fill ph-robot text-xl"></i> 6. Math AI Tutor
+                </button>
+            </nav>
+        </div>
+        
+        <div class="p-4 border-t border-slate-200">
+            <div class="bg-blue-50 rounded-lg p-4">
+                <p class="text-xs font-semibold text-blue-800 mb-1">Progres Pembelajaran</p>
+                <div class="w-full bg-blue-200 rounded-full h-2 mb-1">
+                    <div class="bg-blue-600 h-2 rounded-full" style="width: 15%"></div>
+                </div>
+                <p class="text-xs text-blue-600 text-right">Mulai petualanganmu!</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 w-full bg-navy text-white p-4 flex justify-between items-center z-30 shadow-md">
+        <div class="flex items-center gap-2">
+            <i class="ph ph-function text-2xl"></i>
+            <h1 class="font-bold text-lg">SPLDV</h1>
+        </div>
+        <button onclick="toggleMobileMenu()" class="text-2xl"><i class="ph ph-list"></i></button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto h-full relative scroll-smooth w-full pt-16 md:pt-0">
+        
+        <!-- =================== VIEW: BERANDA =================== -->
+        <div id="view-home" class="section-view min-h-full p-6 md:p-12 lg:p-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+            <div class="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-12 animate-fade-in">
+                <div class="flex-1 space-y-6">
+                    <div class="inline-block px-4 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold text-sm mb-2 shadow-sm">
+                        Matematika SMP Kelas VIII
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-extrabold text-navy leading-tight">
+                        Kuasai <span class="gradient-text">SPLDV</span><br>dengan Mudah!
+                    </h1>
+                    <p class="text-lg text-slate-600 leading-relaxed">
+                        Belajar, Bereksplorasi, dan Menyelesaikan Masalah Sistem Persamaan Linear Dua Variabel secara interaktif. Temukan keajaiban matematika dalam kehidupan sehari-hari!
+                    </p>
+                    
+                    <div class="flex gap-4 pt-4">
+                        <button onclick="navigate('view-materi')" class="px-8 py-4 bg-electric hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-transform transform hover:-translate-y-1 flex items-center gap-2">
+                            Mulai Belajar <i class="ph-bold ph-arrow-right"></i>
+                        </button>
+                        <button onclick="navigate('view-grafik')" class="px-8 py-4 bg-white hover:bg-slate-50 text-electric border-2 border-electric font-bold rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center gap-2">
+                            <i class="ph-bold ph-chart-line-up"></i> Coba Grafik
+                        </button>
+                    </div>
+
+                    <div class="mt-8 flex items-center gap-4 text-sm text-slate-500 font-medium bg-white p-4 rounded-xl shadow-sm inline-block w-max">
+                        <i class="ph-fill ph-check-circle text-green-500 text-xl"></i> Interaktif
+                        <i class="ph-fill ph-check-circle text-green-500 text-xl ml-4"></i> Simulasi Visual
+                        <i class="ph-fill ph-check-circle text-green-500 text-xl ml-4"></i> Didukung AI Tutor
+                    </div>
+                </div>
+                
+                <div class="flex-1 relative animate-slide-up">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-blue-400 to-purple-400 rounded-[3rem] blur-3xl opacity-20 transform rotate-12 scale-110"></div>
+                    <div class="glass-panel p-8 rounded-[2rem] relative z-10 text-center">
+                        <svg class="w-full h-auto text-electric" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="50" y="50" width="300" height="200" rx="20" fill="#EEF2FF"/>
+                            <path d="M50 150H350" stroke="#1C4ED8" stroke-width="4" stroke-dasharray="8 8"/>
+                            <path d="M200 50V250" stroke="#1C4ED8" stroke-width="4" stroke-dasharray="8 8"/>
+                            <path d="M100 220L300 80" stroke="#7E22CE" stroke-width="6" stroke-linecap="round"/>
+                            <path d="M100 120L300 180" stroke="#F59E0B" stroke-width="6" stroke-linecap="round"/>
+                            <circle cx="218" cy="155" r="10" fill="#EF4444"/>
+                            <text x="235" y="150" fill="#EF4444" font-family="Inter" font-weight="bold" font-size="16">(x, y)</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: MATERI =================== -->
+        <div id="view-materi" class="section-view p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
+            <h2 class="text-3xl font-bold text-navy mb-8 border-b-4 border-electric pb-2 inline-block">1. Materi Pembelajaran</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Card 1: Pengertian -->
+                <div class="glass-panel p-8 rounded-2xl">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6 text-2xl">
+                        <i class="ph-bold ph-lightbulb"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-navy">Apa itu SPLDV?</h3>
+                    <p class="text-slate-600 mb-4 leading-relaxed">
+                        <b>Sistem Persamaan Linear Dua Variabel (SPLDV)</b> adalah sistem persamaan yang memuat dua atau lebih persamaan linear, dan setiap persamaan memiliki dua variabel bersahabat (misalnya \(x\) dan \(y\)) dengan pangkat tertinggi bernilai satu.
+                    </p>
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <p class="text-sm font-semibold text-blue-800 mb-2">Bentuk Umum:</p>
+                        <div class="text-center bg-white p-3 rounded shadow-sm font-serif text-lg border-l-4 border-electric">
+                            \(ax + by = c\)<br>
+                            \(dx + ey = f\)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Unsur -->
+                <div class="glass-panel p-8 rounded-2xl">
+                    <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-6 text-2xl">
+                        <i class="ph-bold ph-puzzle-piece"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-navy">Unsur-unsur SPLDV</h3>
+                    <ul class="space-y-4 text-slate-600">
+                        <li class="flex gap-3"><i class="ph-fill ph-check-circle text-purple-500 mt-1"></i> <div><b>Variabel</b>: Peubah yang belum diketahui nilainya (contoh: \(x, y\)).</div></li>
+                        <li class="flex gap-3"><i class="ph-fill ph-check-circle text-purple-500 mt-1"></i> <div><b>Koefisien</b>: Angka di depan variabel (contoh: \(a, b, d, e\)).</div></li>
+                        <li class="flex gap-3"><i class="ph-fill ph-check-circle text-purple-500 mt-1"></i> <div><b>Konstanta</b>: Angka yang berdiri sendiri tanpa variabel (contoh: \(c, f\)).</div></li>
+                        <li class="flex gap-3"><i class="ph-fill ph-check-circle text-purple-500 mt-1"></i> <div><b>Suku</b>: Bagian dari persamaan (contoh: \(ax\), \(by\), \(c\)).</div></li>
+                    </ul>
+                </div>
+
+                <!-- Card 3: Himpunan Penyelesaian -->
+                <div class="glass-panel p-8 rounded-2xl md:col-span-2 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <h3 class="text-xl font-bold mb-4 text-navy flex items-center gap-2">
+                        <i class="ph-fill ph-target text-red-500 text-2xl"></i> Himpunan Penyelesaian & Interpretasi
+                    </h3>
+                    <p class="text-slate-700 mb-6">
+                        Penyelesaian dari SPLDV adalah pasangan nilai \((x, y)\) yang membuat <b>kedua persamaan menjadi bernilai benar</b>. Dalam kehidupan sehari-hari, ini berarti menemukan kondisi di mana dua hal yang berbeda mencapai kesepakatan atau keseimbangan.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="Market" class="w-16 h-16 mx-auto mb-3 opacity-80">
+                            <p class="font-semibold text-sm">Menentukan harga dua barang dari paket diskon.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3011/3011409.png" alt="Tickets" class="w-16 h-16 mx-auto mb-3 opacity-80">
+                            <p class="font-semibold text-sm">Menghitung jumlah tiket anak & dewasa yang terjual.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+                            <img src="https://cdn-icons-png.flaticon.com/512/4144/4144670.png" alt="Age" class="w-16 h-16 mx-auto mb-3 opacity-80">
+                            <p class="font-semibold text-sm">Menebak umur dua orang berdasar petunjuk waktu.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: GRAFIK =================== -->
+        <div id="view-grafik" class="section-view p-6 md:p-10 h-full flex flex-col animate-fade-in">
+            <h2 class="text-3xl font-bold text-navy mb-4 border-b-4 border-electric pb-2 inline-block">2. Simulasi Interaktif Grafik SPLDV</h2>
+            <p class="text-slate-600 mb-6 max-w-3xl">Ubah koefisien dan konstanta di bawah ini. Grafik akan terbentuk otomatis. Titik perpotongan mewakili solusi SPLDV.</p>
+            
+            <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-[500px]">
+                
+                <!-- Controls Side -->
+                <div class="w-full lg:w-1/3 space-y-6">
+                    <!-- Equation 1 -->
+                    <div class="glass-panel p-6 rounded-2xl border-l-8 border-purple-600">
+                        <h3 class="font-bold text-purple-700 mb-3 flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-purple-600"></div> Persamaan 1
+                        </h3>
+                        <div class="flex items-center gap-2 text-lg">
+                            <input type="number" id="a1" value="2" class="math-input border rounded p-1" oninput="updateGraph()"> <span class="font-serif italic">x</span> +
+                            <input type="number" id="b1" value="1" class="math-input border rounded p-1" oninput="updateGraph()"> <span class="font-serif italic">y</span> =
+                            <input type="number" id="c1" value="8" class="math-input border rounded p-1" oninput="updateGraph()">
+                        </div>
+                    </div>
+
+                    <!-- Equation 2 -->
+                    <div class="glass-panel p-6 rounded-2xl border-l-8 border-blue-600">
+                        <h3 class="font-bold text-blue-700 mb-3 flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-blue-600"></div> Persamaan 2
+                        </h3>
+                        <div class="flex items-center gap-2 text-lg">
+                            <input type="number" id="a2" value="1" class="math-input border rounded p-1" oninput="updateGraph()"> <span class="font-serif italic">x</span> +
+                            <input type="number" id="b2" value="1" class="math-input border rounded p-1" oninput="updateGraph()"> <span class="font-serif italic">y</span> =
+                            <input type="number" id="c2" value="5" class="math-input border rounded p-1" oninput="updateGraph()">
+                        </div>
+                    </div>
+
+                    <!-- Result Panel -->
+                    <div class="glass-panel p-6 rounded-2xl bg-white shadow-lg">
+                        <h3 class="font-bold text-slate-800 mb-2 border-b pb-2">Analisis Grafik & Solusi</h3>
+                        <div id="graph-result" class="text-lg font-semibold text-slate-700 mt-4 min-h-[80px] flex items-center">
+                            Memproses...
+                        </div>
+                        <div class="mt-4 text-sm text-slate-500 bg-slate-50 p-3 rounded-lg">
+                            <b>💡 Tips:</b> Geser grafik dengan klik+drag. Gunakan tombol scroll mouse untuk zoom in/out.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas Side -->
+                <div class="w-full lg:w-2/3 h-[500px] lg:h-auto rounded-2xl shadow-xl overflow-hidden relative border border-slate-200 bg-white">
+                    <div id="jxgbox" class="jxgbox w-full h-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: METODE =================== -->
+        <div id="view-metode" class="section-view p-6 md:p-10 max-w-5xl mx-auto animate-fade-in">
+            <h2 class="text-3xl font-bold text-navy mb-8 border-b-4 border-electric pb-2 inline-block">3. Metode Penyelesaian SPLDV</h2>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row gap-6 items-center">
+                <div class="flex-1">
+                    <p class="text-slate-600 mb-2">Mari kita selesaikan SPLDV berikut ini secara bertahap:</p>
+                    <div class="font-serif text-2xl font-bold text-navy bg-blue-50 p-4 rounded-xl inline-block border-l-4 border-electric">
+                        (1) \( 2x + y = 8 \)<br>
+                        (2) \( x + y = 5 \)
+                    </div>
+                </div>
+                <div class="flex gap-2 flex-wrap justify-center">
+                    <button onclick="showMethod('substitusi')" class="method-btn px-4 py-2 bg-electric text-white rounded-lg font-semibold shadow hover:bg-blue-700">Substitusi</button>
+                    <button onclick="showMethod('eliminasi')" class="method-btn px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold shadow hover:bg-slate-300">Eliminasi</button>
+                    <button onclick="showMethod('gabungan')" class="method-btn px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold shadow hover:bg-slate-300">Gabungan</button>
+                </div>
+            </div>
+
+            <!-- Metode Content Area -->
+            <div id="method-content" class="glass-panel p-8 rounded-2xl min-h-[400px]">
+                <!-- Default (Substitusi) -->
+                <div id="metode-substitusi">
+                    <h3 class="text-2xl font-bold text-purple-700 mb-4 flex items-center gap-2"><i class="ph-fill ph-arrows-merge"></i> Metode Substitusi</h3>
+                    <p class="mb-4 text-slate-700">Metode substitusi dilakukan dengan menyatakan salah satu variabel ke dalam variabel lainnya, lalu memasukkannya ke persamaan lain.</p>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-purple-400">
+                            <b>Langkah 1:</b> Ubah persamaan (2) agar membentuk \(y = ...\)<br>
+                            \( x + y = 5 \)<br>
+                            \( y = 5 - x \) (Ini kita sebut persamaan 3)
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-purple-400">
+                            <b>Langkah 2:</b> Substitusikan persamaan (3) ke persamaan (1).<br>
+                            \( 2x + y = 8 \)<br>
+                            \( 2x + (5 - x) = 8 \)<br>
+                            \( x + 5 = 8 \)
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-purple-400 flex items-center gap-4">
+                            <b>Langkah 3:</b> Selesaikan untuk mencari \(x\).<br>
+                            Berapa nilai \(x\)? <input type="number" id="input-x-sub" class="border-2 border-slate-300 rounded w-16 text-center p-1 font-bold">
+                            <button onclick="checkMethodAnswer('sub', 'x', 3)" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm font-bold">Cek</button>
+                            <span id="feedback-x-sub" class="font-bold"></span>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-purple-400 flex items-center gap-4 hidden" id="step-4-sub">
+                            <b>Langkah 4:</b> Substitusikan nilai \(x = 3\) ke persamaan (3).<br>
+                            \( y = 5 - 3 \)<br>
+                            Berapa nilai \(y\)? <input type="number" id="input-y-sub" class="border-2 border-slate-300 rounded w-16 text-center p-1 font-bold">
+                            <button onclick="checkMethodAnswer('sub', 'y', 2)" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm font-bold">Cek</button>
+                            <span id="feedback-y-sub" class="font-bold"></span>
+                        </div>
+
+                        <div class="bg-green-100 p-4 rounded-lg shadow-sm text-green-800 hidden font-bold text-center text-lg animate-fade-in" id="final-sub">
+                            🎉 Selesai! Himpunan Penyelesaian = {(3, 2)}
+                        </div>
+                    </div>
+                </div>
+
+                <div id="metode-eliminasi" class="hidden">
+                    <h3 class="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2"><i class="ph-fill ph-scissors"></i> Metode Eliminasi</h3>
+                    <p class="mb-4 text-slate-700">Metode eliminasi dilakukan dengan menghilangkan salah satu variabel dengan cara menjumlahkan atau mengurangkan kedua persamaan.</p>
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-400">
+                            <b>Langkah 1: Eliminasi \(y\)</b><br>
+                            Karena koefisien \(y\) sudah sama-sama 1, kita bisa langsung mengurangkan.<br>
+                            <div class="font-serif text-lg bg-slate-50 p-2 inline-block rounded border border-slate-200">
+                                \(2x + y = 8\)<br>
+                                <u>\( \ x + y = 5 \)-</u><br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; \(x \ \ \ \ = 3\)
+                            </div>
+                            <p class="mt-2 text-green-600 font-bold">Hebat! Kita langsung dapat x = 3.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-400">
+                            <b>Langkah 2: Eliminasi \(x\)</b><br>
+                            Untuk menghilangkan \(x\), kita harus samakan koefisiennya. Kalikan Persamaan(2) dengan 2.<br>
+                            (1) \(2x + y = 8\) &nbsp;&nbsp;&nbsp;| x 1 | &rarr; \(2x + y = 8\)<br>
+                            (2) \(x + y = 5\) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| x 2 | &rarr; \(2x + 2y = 10\)<br><br>
+                            Kurangkan:<br>
+                            <div class="font-serif text-lg bg-slate-50 p-2 inline-block rounded border border-slate-200">
+                                \(2x + \ \ y = 8\)<br>
+                                <u>\(2x + 2y = 10\)-</u><br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; \(-y \ = -2\)
+                            </div><br>
+                            Maka, \(y = 2\).
+                        </div>
+                        <div class="bg-green-100 p-4 rounded-lg shadow-sm text-green-800 font-bold text-center text-lg">
+                            🎉 Selesai! Himpunan Penyelesaian = {(3, 2)}
+                        </div>
+                    </div>
+                </div>
+
+                <div id="metode-gabungan" class="hidden">
+                    <h3 class="text-2xl font-bold text-orange-600 mb-4 flex items-center gap-2"><i class="ph-fill ph-arrows-out-line-horizontal"></i> Metode Gabungan</h3>
+                    <p class="mb-4 text-slate-700">Metode ini paling efisien. Gunakan eliminasi untuk mencari variabel pertama, lalu gunakan substitusi untuk mencari variabel kedua.</p>
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-400">
+                            <b>Langkah 1 (Eliminasi):</b> Hilangkan \(y\) dengan pengurangan.<br>
+                            \(2x + y = 8\)<br>
+                            <u>\( x + y = 5 \)-</u><br>
+                            \( x = 3 \)
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-400">
+                            <b>Langkah 2 (Substitusi):</b> Masukkan \(x = 3\) ke salah satu persamaan (misal persamaan 2, karena lebih gampang).<br>
+                            \( x + y = 5 \)<br>
+                            \( 3 + y = 5 \)<br>
+                            \( y = 5 - 3 \)<br>
+                            \( y = 2 \)
+                        </div>
+                        <div class="bg-green-100 p-4 rounded-lg shadow-sm text-green-800 font-bold text-center text-lg">
+                            🎉 Cepat dan Tepat! Himpunan Penyelesaian = {(3, 2)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: LATIHAN =================== -->
+        <div id="view-latihan" class="section-view p-6 md:p-10 max-w-6xl mx-auto animate-fade-in">
+            <h2 class="text-3xl font-bold text-navy mb-8 border-b-4 border-electric pb-2 inline-block">4. Contoh Soal & Pembahasan</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- LEVEL 1 -->
+                <div class="bg-white border-t-4 border-green-500 rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-green-600 text-lg">LEVEL 1: MUDAH</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="font-serif text-lg mb-4 text-slate-800">
+                            Tentukan penyelesaian dari sistem persamaan:<br>
+                            \( x + 2y = 10 \)<br>
+                            \( x - y = 4 \)
+                        </p>
+                        <button onclick="togglePembahasan('bahas-1')" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold hover:bg-blue-200">Tampilkan Pembahasan</button>
+                        
+                        <div id="bahas-1" class="hidden mt-4 pt-4 border-t border-dashed border-slate-300 text-sm text-slate-700">
+                            <b>Eliminasi x (karena koefisien sudah sama):</b><br>
+                            \( x + 2y = 10 \)<br>
+                            <u>\( x - y = 4 \)-</u><br>
+                            \( 3y = 6 \) &rarr; \( y = 2 \)<br><br>
+                            <b>Substitusi y = 2 ke persamaan (2):</b><br>
+                            \( x - 2 = 4 \) &rarr; \( x = 6 \)<br>
+                            <b>HP: {(6, 2)}</b>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LEVEL 2 -->
+                <div class="bg-white border-t-4 border-blue-500 rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-blue-600 text-lg">LEVEL 2: SEDANG</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="font-serif text-lg mb-4 text-slate-800">
+                            Tentukan penyelesaian dari:<br>
+                            \( 3x + 2y = 12 \)<br>
+                            \( 2x - 3y = -5 \)
+                        </p>
+                        <button onclick="togglePembahasan('bahas-2')" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold hover:bg-blue-200">Tampilkan Pembahasan</button>
+                        
+                        <div id="bahas-2" class="hidden mt-4 pt-4 border-t border-dashed border-slate-300 text-sm text-slate-700">
+                            <b>Eliminasi x (kalikan silang koefisien):</b><br>
+                            (1) x2 &rarr; \( 6x + 4y = 24 \)<br>
+                            (2) x3 &rarr; \( 6x - 9y = -15 \)<br>
+                            Kurangkan: \( 13y = 39 \) &rarr; \( y = 3 \)<br><br>
+                            <b>Substitusi y = 3 ke pers (1):</b><br>
+                            \( 3x + 2(3) = 12 \) &rarr; \( 3x + 6 = 12 \)<br>
+                            \( 3x = 6 \) &rarr; \( x = 2 \)<br>
+                            <b>HP: {(2, 3)}</b>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LEVEL 3 -->
+                <div class="bg-white border-t-4 border-orange-500 rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-orange-600 text-lg">LEVEL 3: HOTS</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-slate-800 mb-4 leading-relaxed">
+                            Umur Budi sekarang 4 tahun lebih tua dari umur Andi. Lima tahun yang lalu, jumlah umur mereka adalah 24 tahun. Berapa umur Budi dan Andi sekarang?
+                        </p>
+                        <button onclick="togglePembahasan('bahas-3')" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold hover:bg-blue-200">Tampilkan Pembahasan</button>
+                        
+                        <div id="bahas-3" class="hidden mt-4 pt-4 border-t border-dashed border-slate-300 text-sm text-slate-700">
+                            <b>Model Matematika:</b><br>
+                            Misal Budi = x, Andi = y<br>
+                            (1) \( x = y + 4 \) &rarr; \( x - y = 4 \)<br>
+                            (2) \( (x - 5) + (y - 5) = 24 \) &rarr; \( x + y - 10 = 24 \) &rarr; \( x + y = 34 \)<br><br>
+                            <b>Penyelesaian (Eliminasi):</b><br>
+                            \( x - y = 4 \)<br>
+                            <u>\( x + y = 34 \)+</u><br>
+                            \( 2x = 38 \) &rarr; \( x = 19 \) (Umur Budi)<br>
+                            Substitusi: \( 19 - y = 4 \) &rarr; \( y = 15 \) (Umur Andi).
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LEVEL 4 -->
+                <div class="bg-white border-t-4 border-red-600 rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-red-600 text-lg">LEVEL 4: TANTANGAN</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-slate-800 mb-4 leading-relaxed">
+                            Di sebuah tempat parkir terdapat 84 kendaraan yang terdiri atas sepeda motor (2 roda) dan mobil (4 roda). Jika jumlah roda seluruhnya ada 220 roda. Berapa banyak mobil yang ada?
+                        </p>
+                        <button onclick="togglePembahasan('bahas-4')" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold hover:bg-blue-200">Tampilkan Pembahasan</button>
+                        
+                        <div id="bahas-4" class="hidden mt-4 pt-4 border-t border-dashed border-slate-300 text-sm text-slate-700">
+                            <b>Model Matematika:</b><br>
+                            Motor (m), Mobil (b)<br>
+                            (1) Jumlah: \( m + b = 84 \)<br>
+                            (2) Roda: \( 2m + 4b = 220 \) &rarr; bagi 2 &rarr; \( m + 2b = 110 \)<br><br>
+                            <b>Penyelesaian:</b><br>
+                            \( m + 2b = 110 \)<br>
+                            <u>\( m + b = 84 \)-</u><br>
+                            \( b = 26 \)<br>
+                            <b>Kesimpulan:</b> Terdapat 26 mobil di tempat parkir tersebut.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: EKSPLORASI =================== -->
+        <div id="view-eksplorasi" class="section-view p-6 md:p-10 max-w-5xl mx-auto animate-fade-in">
+            <h2 class="text-3xl font-bold text-navy mb-4 border-b-4 border-electric pb-2 inline-block">5. Laboratorium Eksplorasi Matematika</h2>
+            <p class="text-slate-600 mb-8">Terapkan pemahamanmu untuk memecahkan kasus-kasus kontekstual di bawah ini. Ketik jawabanmu lalu periksa hasilnya.</p>
+            
+            <div class="glass-panel p-8 rounded-2xl mb-8">
+                <div class="flex items-start gap-6 flex-col md:flex-row">
+                    <div class="w-full md:w-1/3 bg-blue-50 rounded-xl p-6 text-center">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3144/3144456.png" class="w-24 h-24 mx-auto mb-4 drop-shadow-md">
+                        <h3 class="font-bold text-lg text-blue-800">Toko Buku Maju</h3>
+                    </div>
+                    <div class="w-full md:w-2/3">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-4">
+                            <p class="text-slate-700 mb-2"><b>Transaksi 1:</b> 2 Buku + 1 Pensil = Rp 15.000</p>
+                            <p class="text-slate-700"><b>Transaksi 2:</b> 1 Buku + 2 Pensil = Rp 12.000</p>
+                        </div>
+                        <p class="mb-4 font-semibold text-slate-800">Berapa harga 1 Buku dan 1 Pensil?</p>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                            <div class="flex-1">
+                                <label class="text-xs text-slate-500 font-bold uppercase">Harga 1 Buku (Rp)</label>
+                                <input type="number" id="ans-buku" class="w-full border-2 border-slate-300 rounded-lg p-2 text-lg focus:border-electric outline-none">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-xs text-slate-500 font-bold uppercase">Harga 1 Pensil (Rp)</label>
+                                <input type="number" id="ans-pensil" class="w-full border-2 border-slate-300 rounded-lg p-2 text-lg focus:border-electric outline-none">
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="checkEksplorasi()" class="bg-electric hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">Periksa Jawaban</button>
+                            <button onclick="showHintEksplorasi()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg shadow transition-colors"><i class="ph-fill ph-lightbulb"></i> Petunjuk</button>
+                        </div>
+                        
+                        <div id="eksplorasi-feedback" class="mt-4 p-4 rounded-lg hidden font-bold"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================== VIEW: CHATBOT AI =================== -->
+        <div id="view-chatbot" class="section-view p-4 md:p-6 h-[calc(100vh-4rem)] md:h-screen flex flex-col max-w-4xl mx-auto animate-fade-in">
+            <h2 class="text-2xl font-bold text-navy mb-2 flex items-center gap-2">
+                <i class="ph-fill ph-robot text-electric"></i> Math AI Tutor
+            </h2>
+            <p class="text-sm text-slate-500 mb-4">Tanya apa saja tentang materi, soal, grafik, atau metode penyelesaian SPLDV. Asisten AI siap membantu!</p>
+            
+            <div class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden border border-slate-200 shadow-xl">
+                <!-- Chat History Area -->
+                <div id="chat-history" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white/50">
+                    
+                    <!-- Welcome message -->
+                    <div class="flex gap-3 max-w-[85%]">
+                        <div class="w-10 h-10 rounded-full bg-electric flex items-center justify-center flex-shrink-0 text-white shadow-md">
+                            <i class="ph-bold ph-robot text-xl"></i>
+                        </div>
+                        <div class="chat-bubble-ai p-4 shadow-sm border border-slate-100">
+                            <p>Halo! Saya <b>Math AI Tutor</b> yang dirancang khusus untuk membantumu belajar SPLDV.</p>
+                            <p class="mt-2">Apakah ada soal yang membingungkan atau konsep yang belum kamu mengerti? Ketik saja di bawah ini!</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-4 bg-white border-t border-slate-200">
+                    <form id="chat-form" class="flex gap-2 relative">
+                        <input type="text" id="chat-input" class="flex-1 border border-slate-300 rounded-full pl-6 pr-14 py-3 focus:outline-none focus:border-electric focus:ring-2 focus:ring-blue-100 transition-all bg-slate-50" placeholder="Ketik pertanyaanmu di sini..." autocomplete="off">
+                        <button type="submit" id="chat-submit" class="absolute right-2 top-1.5 w-10 h-10 bg-electric text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
+                            <i class="ph-bold ph-paper-plane-right"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Overlay Mobile Menu -->
+    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="toggleMobileMenu()"></div>
+
+    <!-- Mobile Sidebar Menu -->
+    <div id="mobile-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col md:hidden">
+        <div class="p-4 bg-gradient-to-br from-navy to-electric text-white flex justify-between items-center">
+            <h1 class="font-bold text-lg">Menu Belajar</h1>
+            <button onclick="toggleMobileMenu()"><i class="ph ph-x text-2xl"></i></button>
+        </div>
+        <nav class="flex flex-col gap-1 p-3 overflow-y-auto flex-1" id="mobile-nav-items">
+            <!-- Populated via JS based on desktop nav -->
+        </nav>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // ======= NAVIGATION & UI LOGIC =======
+        function navigate(viewId) {
+            // Hide all views
+            document.querySelectorAll('.section-view').forEach(el => {
+                el.style.display = 'none';
+                el.classList.remove('animate-fade-in');
+            });
+            
+            // Show target view
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = viewId === 'view-grafik' || viewId === 'view-chatbot' ? 'flex' : 'block';
+                targetView.classList.add('animate-fade-in');
+                
+                // If grafik, init or update board
+                if (viewId === 'view-grafik') {
+                    setTimeout(() => {
+                        if (!board) initGraph();
+                        else updateGraph();
+                    }, 100);
+                }
+            }
+
+            // Update active state in sidebar
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active', 'bg-blue-50', 'text-electric', 'font-semibold', 'border-r-4', 'border-electric');
+                el.classList.add('text-slate-600');
+                if (el.getAttribute('onclick') === `navigate('${viewId}')`) {
+                    el.classList.add('active', 'bg-blue-50', 'text-electric', 'font-semibold', 'border-r-4', 'border-electric');
+                    el.classList.remove('text-slate-600');
+                }
+            });
+
+            // Re-render math
+            if(window.MathJax) {
+                MathJax.typesetPromise();
+            }
+
+            // Close mobile menu if open
+            if(!document.getElementById('mobile-sidebar').classList.contains('-translate-x-full')) {
+                toggleMobileMenu();
+            }
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('mobile-sidebar');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+            
+            // Populate mobile nav once
+            const mobileNav = document.getElementById('mobile-nav-items');
+            if (mobileNav.children.length === 0) {
+                const desktopNavHtml = document.getElementById('main-nav').innerHTML;
+                mobileNav.innerHTML = desktopNavHtml;
+            }
+        }
+
+        // ======= INTERACTIVE GRAPHING (JSXGraph) =======
+        let board = null;
+        let line1 = null;
+        let line2 = null;
+        let intersectionPt = null;
+
+        function initGraph() {
+            try {
+                board = JXG.JSXGraph.initBoard('jxgbox', {
+                    boundingbox: [-10, 10, 10, -10], 
+                    axis: true,
+                    showCopyright: false,
+                    showNavigation: true,
+                    keepaspectratio: true,
+                    zoom: { factorX: 1.25, factorY: 1.25, wheel: true, needshift: false }
+                });
+                updateGraph();
+            } catch (e) {
+                console.error("Error init JSXGraph", e);
+            }
+        }
+
+        function updateGraph() {
+            if (!board) return;
+            board.suspendUpdate();
+            
+            // Get inputs
+            const a1 = parseFloat(document.getElementById('a1').value) || 0;
+            const b1 = parseFloat(document.getElementById('b1').value) || 0;
+            const c1 = parseFloat(document.getElementById('c1').value) || 0;
+            
+            const a2 = parseFloat(document.getElementById('a2').value) || 0;
+            const b2 = parseFloat(document.getElementById('b2').value) || 0;
+            const c2 = parseFloat(document.getElementById('c2').value) || 0;
+
+            // Clear previous elements
+            if(line1) board.removeObject(line1);
+            if(line2) board.removeObject(line2);
+            if(intersectionPt) board.removeObject(intersectionPt);
+
+            // Draw line 1: a1*x + b1*y = c1 => a1*x + b1*y - c1 = 0
+            // JSXGraph line equation form is c + a*x + b*y = 0  --> So [ -c1, a1, b1 ]
+            line1 = board.create('line', [-c1, a1, b1], { strokeColor: '#7E22CE', strokeWidth: 3, name: 'Eq 1', withLabel: true });
+            
+            // Draw line 2
+            line2 = board.create('line', [-c2, a2, b2], { strokeColor: '#1C4ED8', strokeWidth: 3, name: 'Eq 2', withLabel: true });
+
+            const resultDiv = document.getElementById('graph-result');
+
+            // Calculate determinant to find intersection
+            const D = a1 * b2 - a2 * b1;
+            const Dx = c1 * b2 - c2 * b1;
+            const Dy = a1 * c2 - a2 * c1;
+
+            if (D === 0) {
+                if (Dx === 0 && Dy === 0) {
+                    resultDiv.innerHTML = `<span class="text-orange-600 font-bold"><i class="ph-bold ph-warning"></i> Dua garis berimpit.</span><br>Memiliki <b>tak hingga banyak solusi</b> (himpunan penyelesaian tak terhingga).`;
+                } else {
+                    resultDiv.innerHTML = `<span class="text-red-600 font-bold"><i class="ph-bold ph-prohibit"></i> Dua garis sejajar.</span><br><b>Tidak memiliki solusi</b> (himpunan penyelesaian kosong).`;
+                }
+            } else {
+                const x = Dx / D;
+                const y = Dy / D;
+                
+                intersectionPt = board.create('intersection', [line1, line2], {
+                    name: `(${x.toFixed(2)}, ${y.toFixed(2)})`,
+                    withLabel: true,
+                    label: { offset: [10, 10], strokeColor: '#EF4444', fontSize: 16, cssClass: 'font-bold' },
+                    fillColor: '#EF4444',
+                    strokeColor: '#white',
+                    strokeWidth: 2,
+                    size: 5
+                });
+                
+                // Format nice numbers (remove decimal if integer)
+                const niceX = Number.isInteger(x) ? x : x.toFixed(2);
+                const niceY = Number.isInteger(y) ? y : y.toFixed(2);
+
+                resultDiv.innerHTML = `
+                    <span class="text-green-600 font-bold"><i class="ph-fill ph-check-circle"></i> Memiliki 1 Solusi Unik.</span><br>
+                    Kedua garis berpotongan di Titik <b>(${niceX}, ${niceY})</b>.<br>
+                    Jadi, HP = <b>{(${niceX}, ${niceY})}</b>.
+                `;
+            }
+
+            board.unsuspendUpdate();
+        }
+
+        // ======= METODE LOGIC =======
+        function showMethod(type) {
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.classList.replace('bg-electric', 'bg-slate-200');
+                btn.classList.replace('text-white', 'text-slate-700');
+            });
+            event.target.classList.replace('bg-slate-200', 'bg-electric');
+            event.target.classList.replace('text-slate-700', 'text-white');
+
+            document.getElementById('metode-substitusi').classList.add('hidden');
+            document.getElementById('metode-eliminasi').classList.add('hidden');
+            document.getElementById('metode-gabungan').classList.add('hidden');
+            
+            document.getElementById(`metode-${type}`).classList.remove('hidden');
+            document.getElementById(`metode-${type}`).classList.add('animate-fade-in');
+        }
+
+        function checkMethodAnswer(method, variable, correctVal) {
+            const inputEl = document.getElementById(`input-${variable}-${method}`);
+            const feedbackEl = document.getElementById(`feedback-${variable}-${method}`);
+            const val = parseFloat(inputEl.value);
+            
+            if (val === correctVal) {
+                feedbackEl.innerHTML = '<span class="text-green-600"><i class="ph-bold ph-check"></i> Benar!</span>';
+                inputEl.classList.add('border-green-500', 'bg-green-50');
+                inputEl.disabled = true;
+                
+                if (method === 'sub' && variable === 'x') {
+                    document.getElementById('step-4-sub').classList.remove('hidden');
+                    document.getElementById('step-4-sub').classList.add('animate-fade-in');
+                }
+                if (method === 'sub' && variable === 'y') {
+                    document.getElementById('final-sub').classList.remove('hidden');
+                }
+            } else {
+                feedbackEl.innerHTML = '<span class="text-red-500"><i class="ph-bold ph-x"></i> Salah, coba hitung lagi!</span>';
+                inputEl.classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => {
+                    inputEl.classList.remove('border-red-500', 'bg-red-50');
+                    feedbackEl.innerHTML = '';
+                }, 2000);
+            }
+        }
+
+        // ======= LATIHAN LOGIC =======
+        function togglePembahasan(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                el.classList.add('animate-fade-in');
+                event.target.textContent = 'Sembunyikan Pembahasan';
+                MathJax.typesetPromise();
+            } else {
+                el.classList.add('hidden');
+                event.target.textContent = 'Tampilkan Pembahasan';
+            }
+        }
+
+        // ======= EKSPLORASI LOGIC =======
+        function checkEksplorasi() {
+            const b = parseFloat(document.getElementById('ans-buku').value);
+            const p = parseFloat(document.getElementById('ans-pensil').value);
+            const feedback = document.getElementById('eksplorasi-feedback');
+            
+            feedback.classList.remove('hidden');
+            
+            // Expected: Buku (x) = 6000, Pensil (y) = 3000
+            // 2x + y = 15000
+            // x + 2y = 12000
+            // Eliminasi: 2x + y = 15000 ; 2x + 4y = 24000 => -3y = -9000 => y = 3000
+            // x + 6000 = 12000 => x = 6000
+
+            if (b === 6000 && p === 3000) {
+                feedback.className = "mt-4 p-4 rounded-lg font-bold bg-green-100 text-green-700 animate-fade-in";
+                feedback.innerHTML = '<i class="ph-bold ph-check-circle text-xl align-middle"></i> Luar biasa! Pemodelan dan hitunganmu sangat tepat. Harga 1 Buku Rp6.000 dan 1 Pensil Rp3.000.';
+            } else {
+                feedback.className = "mt-4 p-4 rounded-lg font-bold bg-red-100 text-red-700 animate-fade-in";
+                feedback.innerHTML = '<i class="ph-bold ph-warning-circle text-xl align-middle"></i> Ups, belum tepat. Coba periksa lagi atau gunakan tombol petunjuk.';
+            }
+        }
+
+        function showHintEksplorasi() {
+            const feedback = document.getElementById('eksplorasi-feedback');
+            feedback.classList.remove('hidden');
+            feedback.className = "mt-4 p-4 rounded-lg font-medium bg-blue-50 text-blue-800 text-sm animate-fade-in";
+            feedback.innerHTML = '<b>Petunjuk:</b><br>Misal Buku = x, Pensil = y.<br>Persamaan 1: 2x + y = 15.000<br>Persamaan 2: x + 2y = 12.000<br>Coba kalikan Persamaan 2 dengan angka 2 agar koefisien x sama, lalu kurangkan!';
+        }
+
+
+        // ======= AI CHATBOT LOGIC (Gemini API) =======
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatHistory = document.getElementById('chat-history');
+        const chatBtn = document.getElementById('chat-submit');
+        
+        let aiHistory = [];
+
+        // The system prompt explicitly guides the model to act as a Math Tutor
+        const systemPrompt = `Kamu adalah "MATH AI TUTOR", Asisten Belajar interaktif khusus materi Sistem Persamaan Linear Dua Variabel (SPLDV) untuk siswa SMP Kelas VIII.
+Pengembang Aplikasi ini adalah "I Made Edy Bangkit Saputra".
+Aturan responmu:
+1. Gunakan bahasa Indonesia yang ramah, memotivasi, dan mudah dipahami anak SMP.
+2. JANGAN LANGSUNG memberikan jawaban akhir. Berikan petunjuk step-by-step (scaffolding).
+3. Bimbing siswa memahami metode grafik, substitusi, eliminasi, dan gabungan secara sabar.
+4. Identifikasi kesalahan perhitungan siswa jika mereka memberikan jawaban salah dan luruskan secara halus.
+5. Gunakan format Markdown untuk rumus atau teks matematika. Gunakan $ untuk inline math atau $$ untuk block math jika diperlukan, tapi lebih baik gunakan plain text yang jelas seperti "2x + y = 8" agar mudah dibaca di layar biasa.`;
+
+        // Configure MarkedJS to not conflict too much with pure HTML
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userText = chatInput.value.trim();
+            if (!userText) return;
+
+            // 1. Add User Message to UI
+            appendMessage('user', userText);
+            chatInput.value = '';
+            chatInput.disabled = true;
+            chatBtn.disabled = true;
+            chatBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i>';
+
+            // 2. Add to History Payload
+            aiHistory.push({ role: "user", parts: [{ text: userText }] });
+
+            // 3. Setup Payload
+            const payload = {
+                contents: aiHistory,
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            const apiKey = ""; // API Key provided by runtime canvas
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                // Implementing exponential backoff logic (simplified)
+                let response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0) {
+                    const modelReply = result.candidates[0].content.parts[0].text;
+                    
+                    // Add Model Message to UI
+                    appendMessage('ai', modelReply);
+                    
+                    // Add to History
+                    aiHistory.push({ role: "model", parts: [{ text: modelReply }] });
+                } else {
+                    appendMessage('ai', "Maaf, sepertinya saya sedang kesulitan memproses pertanyaanmu. Coba tanyakan lagi ya.");
+                }
+
+            } catch (error) {
+                console.error("AI API Error", error);
+                appendMessage('ai', "Ups! Koneksi ke otak AI terputus. Pastikan internetmu lancar dan coba sebentar lagi.");
+            } finally {
+                chatInput.disabled = false;
+                chatBtn.disabled = false;
+                chatBtn.innerHTML = '<i class="ph-bold ph-paper-plane-right"></i>';
+                chatInput.focus();
+            }
+        });
+
+        function appendMessage(sender, text) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex gap-3 max-w-[85%] animate-fade-in ${sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`;
+            
+            let avatar = '';
+            let bubbleClass = '';
+            
+            if (sender === 'ai') {
+                avatar = `<div class="w-10 h-10 rounded-full bg-electric flex items-center justify-center flex-shrink-0 text-white shadow-md"><i class="ph-bold ph-robot text-xl"></i></div>`;
+                bubbleClass = 'chat-bubble-ai border border-slate-100';
+            } else {
+                avatar = `<div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-600 shadow-md"><i class="ph-bold ph-user text-xl"></i></div>`;
+                bubbleClass = 'chat-bubble-user shadow-md';
+            }
+
+            // Parse Markdown if AI
+            let htmlContent = sender === 'ai' ? marked.parse(text) : text;
+
+            wrapper.innerHTML = `
+                ${avatar}
+                <div class="${bubbleClass} p-4 shadow-sm prose prose-sm max-w-none prose-p:leading-relaxed">
+                    ${htmlContent}
+                </div>
+            `;
+            
+            chatHistory.appendChild(wrapper);
+            
+            // Scroll to bottom
+            chatHistory.scrollTo({
+                top: chatHistory.scrollHeight,
+                behavior: 'smooth'
+            });
+
+            // Re-render math if any
+            if(window.MathJax) {
+                MathJax.typesetPromise([wrapper]);
+            }
+        }
+
+    </script>
+</body>
+</html>
